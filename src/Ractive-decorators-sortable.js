@@ -181,14 +181,24 @@ var sortableDecorator = (function ( global, factory ) {
 
         array = ractive.get( sourceArray );
 
+        var isBackbone = (ractive.adaptors.Backbone && array instanceof Backbone.Collection);
+
         // remove source from array
-        source = array.splice( sourceIndex, 1 )[0];
+        if( isBackbone ) {
+            array.remove(source = array.models[sourceIndex]);
+        } else {
+            source = array.splice( sourceIndex, 1 )[0];
+        }
 
         // the target index is now the source index...
         sourceIndex = targetIndex;
 
         // add source back to array in new location
-        array.splice( sourceIndex, 0, source );
+        if( isBackbone ) {
+            array.add(source, {at: sourceIndex});
+        } else {
+            array.splice( sourceIndex, 0, source );
+        }
     };
 
     removeTargetClass = function () {
