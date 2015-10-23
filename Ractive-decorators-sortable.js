@@ -3,7 +3,7 @@
     Ractive-decorators-sortable
     ===========================
 
-    Version 0.1.0.
+    Version 0.1.2.
 
     This plugin adds a 'sortable' decorator to Ractive, which enables
     elements that correspond to array members to be re-ordered using
@@ -85,7 +85,8 @@ var sortableDecorator = (function ( global, factory ) {
 
     'use strict';
 
-    var sortable,
+    var global,
+        sortable,
         ractive,
         sourceKeypath,
         sourceArray,
@@ -95,6 +96,8 @@ var sortableDecorator = (function ( global, factory ) {
         removeTargetClass,
         preventDefault,
         errorMessage;
+
+    global = typeof window !== 'undefined' ? window : this;
 
     sortable = function ( node ) {
         node.draggable = true;
@@ -181,14 +184,24 @@ var sortableDecorator = (function ( global, factory ) {
 
         array = ractive.get( sourceArray );
 
+        var isBackbone = (ractive.adaptors.Backbone && array instanceof global.Backbone.Collection);
+
         // remove source from array
-        source = array.splice( sourceIndex, 1 )[0];
+        if( isBackbone ) {
+            array.remove(source = array.models[sourceIndex]);
+        } else {
+            source = array.splice( sourceIndex, 1 )[0];
+        }
 
         // the target index is now the source index...
         sourceIndex = targetIndex;
 
         // add source back to array in new location
-        array.splice( sourceIndex, 0, source );
+        if( isBackbone ) {
+            array.add(source, {at: sourceIndex});
+        } else {
+            array.splice( sourceIndex, 0, source );
+        }
     };
 
     removeTargetClass = function () {

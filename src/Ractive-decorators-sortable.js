@@ -85,7 +85,8 @@ var sortableDecorator = (function ( global, factory ) {
 
     'use strict';
 
-    var sortable,
+    var global,
+        sortable,
         ractive,
         sourceKeypath,
         sourceArray,
@@ -95,6 +96,8 @@ var sortableDecorator = (function ( global, factory ) {
         removeTargetClass,
         preventDefault,
         errorMessage;
+
+    global = typeof window !== 'undefined' ? window : this;
 
     sortable = function ( node ) {
         node.draggable = true;
@@ -181,7 +184,7 @@ var sortableDecorator = (function ( global, factory ) {
 
         array = ractive.get( sourceArray );
 
-        var isBackbone = (ractive.adaptors.Backbone && array instanceof Backbone.Collection);
+        var isBackbone = (ractive.adaptors.Backbone && array instanceof global.Backbone.Collection);
 
         // remove source from array
         if( isBackbone ) {
