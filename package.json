@@ -1,6 +1,6 @@
 {
 	"name": "ractive-decorators-sortable",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"author": {
 		"name": "Rich Harris"
 	},
@@ -8,7 +8,7 @@
 	"description": "Sortable list decorator plugin for Ractive.js",
 	"jam": {
 		"dependencies": {
-			"Ractive": ">= 0.3.8"
+			"Ractive": ">= 0.8.0"
 		}
 	},
 	"devDependencies": {

@@ -3,7 +3,7 @@
     Ractive-decorators-sortable
     ===========================
 
-    Version 0.1.2.
+    Version 0.1.3.
 
     This plugin adds a 'sortable' decorator to Ractive, which enables
     elements that correspond to array members to be re-ordered using
@@ -64,12 +64,12 @@ var sortableDecorator = (function ( global, factory ) {
 
     // Common JS (i.e. browserify) environment
     if ( typeof module !== 'undefined' && module.exports && typeof require === 'function' ) {
-        factory( require( 'Ractive' ) );
+        factory( require( 'ractive' ) );
     }
 
     // AMD?
     else if ( typeof define === 'function' && define.amd ) {
-        define([ 'Ractive' ], factory );
+        define([ 'ractive' ], factory );
     }
 
     // browser global
@@ -85,8 +85,7 @@ var sortableDecorator = (function ( global, factory ) {
 
     'use strict';
 
-    var global,
-        sortable,
+    var sortable,
         ractive,
         sourceKeypath,
         sourceArray,
@@ -96,8 +95,6 @@ var sortableDecorator = (function ( global, factory ) {
         removeTargetClass,
         preventDefault,
         errorMessage;
-
-    global = typeof window !== 'undefined' ? window : this;
 
     sortable = function ( node ) {
         node.draggable = true;
@@ -129,7 +126,7 @@ var sortableDecorator = (function ( global, factory ) {
     dragstartHandler = function ( event ) {
         var storage = Ractive.getNodeInfo(this), lastDotIndex;
 
-        sourceKeypath = storage.keypath;
+        sourceKeypath = storage.resolve();
 
         // this decorator only works with array members!
         lastDotIndex = sourceKeypath.lastIndexOf( '.' );
@@ -148,18 +145,19 @@ var sortableDecorator = (function ( global, factory ) {
         event.dataTransfer.setData( 'foo', true ); // enables dragging in FF. go figure
 
         // keep a reference to the Ractive instance that 'owns' this data and this element
-        ractive = storage.ractive;
+        ractive = storage.ractive.root;
     };
 
     dragenterHandler = function () {
         var targetKeypath, lastDotIndex, targetArray, targetIndex, array, source;
+        var storage = Ractive.getNodeInfo(this);
 
         // If we strayed into someone else's territory, abort
-        if ( this._ractive.root !== ractive ) {
+        if ( storage.ractive.root !== ractive ) {
             return;
         }
 
-        targetKeypath = Ractive.getNodeInfo(this).keypath;
+        targetKeypath = storage.resolve();
 
         // this decorator only works with array members!
         lastDotIndex = targetKeypath.lastIndexOf( '.' );
@@ -183,25 +181,11 @@ var sortableDecorator = (function ( global, factory ) {
         }
 
         array = ractive.get( sourceArray );
-
-        var isBackbone = (ractive.adaptors.Backbone && array instanceof global.Backbone.Collection);
-
-        // remove source from array
-        if( isBackbone ) {
-            array.remove(source = array.models[sourceIndex]);
-        } else {
-            source = array.splice( sourceIndex, 1 )[0];
-        }
-
+        source = array.splice( sourceIndex, 1 )[0];
         // the target index is now the source index...
         sourceIndex = targetIndex;
-
-        // add source back to array in new location
-        if( isBackbone ) {
-            array.add(source, {at: sourceIndex});
-        } else {
-            array.splice( sourceIndex, 0, source );
-        }
+        array.splice( sourceIndex, 0, source );
+        ractive.update( sourceArray );
     };
 
     removeTargetClass = function () {
