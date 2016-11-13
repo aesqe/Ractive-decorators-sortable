@@ -64,7 +64,7 @@ var sortableDecorator = (function ( global, factory ) {
 
     // Common JS (i.e. browserify) environment
     if ( typeof module !== 'undefined' && module.exports && typeof require === 'function' ) {
-        factory( require( 'ractive' ) );
+        return factory( require( 'ractive' ) );
     }
 
     // AMD?
@@ -124,9 +124,9 @@ var sortableDecorator = (function ( global, factory ) {
     errorMessage = 'The sortable decorator only works with elements that correspond to array members';
 
     dragstartHandler = function ( event ) {
-        var storage = Ractive.getNodeInfo(this), lastDotIndex;
+        var info = Ractive.getNodeInfo(this), lastDotIndex;
 
-        sourceKeypath = storage.resolve();
+        sourceKeypath = info.resolve();
 
         // this decorator only works with array members!
         lastDotIndex = sourceKeypath.lastIndexOf( '.' );
@@ -145,19 +145,19 @@ var sortableDecorator = (function ( global, factory ) {
         event.dataTransfer.setData( 'foo', true ); // enables dragging in FF. go figure
 
         // keep a reference to the Ractive instance that 'owns' this data and this element
-        ractive = storage.ractive.root;
+        ractive = info.ractive.root;
     };
 
     dragenterHandler = function () {
-        var targetKeypath, lastDotIndex, targetArray, targetIndex, array, source;
-        var storage = Ractive.getNodeInfo(this);
+        var targetKeypath, lastDotIndex, targetArray, targetIndex;
+        var info = Ractive.getNodeInfo(this);
 
         // If we strayed into someone else's territory, abort
-        if ( storage.ractive.root !== ractive ) {
+        if ( info.ractive.root !== ractive ) {
             return;
         }
 
-        targetKeypath = storage.resolve();
+        targetKeypath = info.resolve();
 
         // this decorator only works with array members!
         lastDotIndex = targetKeypath.lastIndexOf( '.' );
@@ -180,12 +180,14 @@ var sortableDecorator = (function ( global, factory ) {
             return;
         }
 
-        array = ractive.get( sourceArray );
-        source = array.splice( sourceIndex, 1 )[0];
-        // the target index is now the source index...
-        sourceIndex = targetIndex;
-        array.splice( sourceIndex, 0, source );
-        ractive.update( sourceArray );
+        ractive.splice(sourceArray, sourceIndex, 1)
+            .then(function(items) {
+                sourceIndex = targetIndex;
+                return ractive.splice(sourceArray, sourceIndex, 0, items[0]);
+            })
+            .then(function(){
+                ractive.fire("sort", info);
+            });
     };
 
     removeTargetClass = function () {
